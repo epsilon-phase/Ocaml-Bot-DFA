@@ -1,0 +1,22 @@
+<color> = { "green"
+          | "blue"
+          | "yellow"
+          | "red" };
+<mountain-noun> = { "hills"
+                | "foothills"
+                | "mount"
+                | { "devil's"
+                  | "angel's"
+                  | "dickhead's"
+                  | "broken"
+                  | "sharted"
+                  }
+                  "mountain"
+                | { "dragon's"
+                  | "ogre's"
+                  | "warlock's"
+                  | "quarterback's"
+                  | ""
+                  }
+                  "teeth"};
+<mountain> = <color> <mountain-noun>;
