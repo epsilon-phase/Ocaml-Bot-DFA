@@ -9,7 +9,7 @@
                   | "angel's"
                   | "dickhead's"
                   | "broken"
-                  | "sharted"
+                  | "shart" 
                   }
                   "mountain"
                 | { "dragon's"
@@ -18,5 +18,50 @@
                   | "quarterback's"
                   | ""
                   }
-                  "teeth"};
-<mountain> = <color> <mountain-noun>;
+                  {
+                    "teeth"
+                  | "crag"
+                  }};
+<mountain> = { <color> | ""} <mountain-noun>;
+<field> = { "plains" | "delta" | "desert" };
+<terrain> = { <mountain> | <field> };
+
+<#>= "Location features";
+<temple> = { "temple" | "lamissary" };
+<city-adjectives> = { "" };
+<city> = <city-adjectives> { "town" | "capital" };
+<fortress>= { "fort" | "castle" | "post" | "citadel" | "mesa" };
+<location-type> = { <temple> | <city> | <fortress> };
+<preposition> = { "before" | "at" | "upon" };
+<location> = <location-type> { "" | <preposition> "the" <terrain> };
+<arrival> = { "stumble into" | "come upon" | "arrive at" | "look" { "upon" | "at" }};
+
+<#> = "actions";
+<actor-aggregate> = { "monks" | "soldiers" | "politicians" };
+<action-aggregate> = { "eating" {"lunch" | "dinner" | "breakfast" }
+                     | "marching"
+                     | "milling around" { ""
+                                        | "and" {"talking"
+                                                |"preparing"
+                                                  {"a" { "festival"
+                                                       | "\n" "embankment"
+                                                       | "camp" } }}}};
+<actor-single> = "one";
+<gift-quality> = { "fine" | "crude" | "average" | "unusual" };
+<metals> = { "brass" | "steel" 
+             |"iron" |"rusted"
+             |"copper"|"tin"
+             |"strontium"
+             | "unusual" <color> "alloy"
+             };
+<action-gift> = {"" | <gift-quality>}
+                {
+                <metals> {"watch"|"clock"}
+                |"clockwork"  {"animal"|"cat"|"mouse"|"bat"|"bird"}{""|"made of" <metals>}};
+<action-single>={ "waves at you as you" { "approach" | "pass" }
+                  | "offers you a meal"
+                  | "gives you a" { "harsh" | "curious" } "look"
+                  | {"says nothing and passes you a" | "hands you a "} <action-gift> };
+<action-total> = { "there are" | "you observe" } <actor-aggregate> <action-aggregate> "\." <actor-single> <action-single> "\.";
+<#> = "Voila!";
+<total>="You" <arrival> { "a" | "the" } <location> "\." <action-total>;
