@@ -9,9 +9,23 @@ type terminal =
 let ws = skip_while (function
     | '\x20' | '\x0a' | '\x0d' | '\x09' -> true
     | _ -> false)
+
+(**Returns true if b is a prefix of a*)
+let str_prefix a b=
+  if String.length a>=String.length b then
+    String.equal b (String.sub a 0 (String.length b))
+  else
+    false
+
+let fix_string x=
+  if str_prefix x "\\" then
+    String.sub x 1 (String.length x-1)
+  else
+    String.concat "" [" ";x]
+
 let string = ws *> char '"' *> take_while (fun x->x!='"') <* char '"' >>| fun x->match x with
   | ""-> Null
-  |_->Leaf x;;
+  |_->Leaf (fix_string x);;
 let symbol = ws *> char '<' *> take_while (fun x->x!='>') <* char '>'>>| fun x->Symbol x;;
 
 let dictionary = fix (fun dict->
@@ -30,17 +44,22 @@ let rec terminal_to_str symb=
   | Null -> "Null"
   | Sequence s->String.concat "->" (List.map terminal_to_str s)
   | Dictionary l->String.concat " " ([ "{ " ]@(List.map terminal_to_str l)@["}"]);;
-let comment = char '#' *> take_till (fun x->x=='\n');;
+
+let comment = char '#' *> take_till (fun x->x=='\n') <* char '\n';;
+
 let all_assignments : terminal list list t=
   many (choice [comment>>|(fun _->[]);assignment>>|fun x->x]);;
+
 let eval str =
   match parse_string dictionary str with
   | Ok v->terminal_to_str v
   | Error msg->failwith msg;;
+
 let eval_assignment str=
   match parse_string assignment str with
   | Ok v->String.concat " " (List.map terminal_to_str v)
   |Error msg ->failwith msg;;
+
 let load_file f =
   let ic = open_in f in
   let n = in_channel_length ic in
@@ -56,6 +75,7 @@ let get_assignments fname=
                  (List.map (fun x->List.map terminal_to_str x) v))
   | Error msg-> failwith msg;;
 
+(** Replace instances of the Symbol subtype throughout the parsed unit with the value of x**)
 let resolve_assignments (assignments: terminal list list)=
   let tbl = Hashtbl.create 100 in
   let folder
@@ -65,10 +85,17 @@ let resolve_assignments (assignments: terminal list list)=
       match term with
       | Sequence x->Sequence (List.map recursor x)
       | Dictionary x->Dictionary (List.map recursor x)
-      | Symbol s-> Hashtbl.find tbl s
+      | Symbol s->
+        begin
+          try Hashtbl.find tbl s
+          with Not_found -> Printf.eprintf "Could not find symbol with name %s in rule for %s\n" s symbol; raise Not_found
+        end
       | x->x in
     Hashtbl.add tbl symbol (recursor (List.hd (List.tl t))) in
-  List.iter folder assignments;
+  List.iter folder (List.filter
+                      (fun x->if (List.length x>0) then (Symbol "#"!=List.hd x) else false
+                      )
+                      assignments);
   tbl;;
 let resolve_and_load_assignments fname=
   let s=load_file fname in

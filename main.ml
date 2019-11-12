@@ -15,6 +15,20 @@ let add_term (root:term) (leaf:term) =
   | SingleOpt (a,b) -> Dictionary (Array.of_list [SingleOpt (a,b);leaf],End)
   | End-> Dictionary (Array.of_list [End; leaf],End)
   | Leaf s -> Dictionary (Array.of_list [Leaf s;leaf],End);;
+
+let rec count_states term =
+  match term with
+  | Leaf _ -> 1
+  | End -> 1
+  | SingleOpt (a,b) -> (count_states a) * (count_states b)
+  | Dictionary (arr,next) -> (Array.fold_right (fun  y x->x+count_states y) arr 0)  * count_states next
+;;
+let rec longest_chain term=
+  match term with
+  | Leaf _->1
+  | End->0
+  | SingleOpt (a,b)-> longest_chain a + longest_chain b
+  | Dictionary (a,b)->Array.fold_right (fun x y-> max y (longest_chain x)) a 0 + longest_chain b;;
 let temple_adjectives = add_term (list_of_atoms_to_terms [
     "wonderous"
   ;"terrible"
@@ -89,13 +103,26 @@ let rec convert_to_term (t:Parser.terminal)=
       SingleOpt (convert_to_term x,y)) a End
   |Parser.Null -> End
   |_->End;;
-let () = (*List.iter (fun x->
-           print_endline (String.concat " " x)) (explore (optimize temple_terms) []);*)
-    print_endline (Parser.eval "{ \"hello\" | \"Hi\" | <no-way> | { \"yes way\" \"hello\" } }");
-    print_endline (Parser.get_assignments "example.bot");
-    let q=Parser.resolve_and_load_assignments "example.bot" in
-    print_endline (Parser.terminal_to_str (Hashtbl.find q "mountain"));
-    List.iter (fun x->
-        print_endline (String.concat " "  x))
-      (explore (optimize (convert_to_term (Hashtbl.find q "mountain"))) [])
+let list_terms (tbl:(string,Parser.terminal) Hashtbl.t) =
+  Hashtbl.iter (fun x _->if not (String.equal x "#") then print_endline x) tbl
+
+let () =
+  Random.self_init ();
+  if Array.length Sys.argv < 2 then
+    Printf.printf "Arguments <bot spec> <rule name> [repetitions]
+      You can provide the file alone to show what rules you are able to use."
+  else
+    let q = Parser.resolve_and_load_assignments Sys.argv.(1) in
+    if Array.length Sys.argv < 3 then begin
+      print_endline "Your available terms are:";
+      list_terms q;
+    end else
+      let terms = optimize (convert_to_term (Hashtbl.find q Sys.argv.(2))) in
+      Printf.printf "Total possible states %i\n" (count_states terms);
+      Printf.printf "Longest chain %i\n" (longest_chain terms);
+      for _ = 1 to (if Array.length Sys.argv > 3 then int_of_string Sys.argv.(3) else 1) do
+        let indices = rand_choice terms in
+        let (a,_)=from_indices terms indices in
+        print_endline (String.concat "" a);
+      done
 ;;
