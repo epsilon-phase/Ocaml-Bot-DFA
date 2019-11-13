@@ -14,7 +14,8 @@ let () =
     end else
       let terms = Dfa.Terms.optimize (convert_to_term begin
           try (Hashtbl.find q Sys.argv.(2))
-          with Not_found->Printf.eprintf "Term %s not found\nYou can use any of these though\n" Sys.argv.(2);
+          with Not_found->Printf.eprintf "Term %s not found
+You can use any of these though\n" Sys.argv.(2);
             list_terms ~error:true q;
             raise Not_found
           end) in
