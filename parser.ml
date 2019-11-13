@@ -5,10 +5,12 @@ type terminal =
   | Leaf of string
   | Null
   | Sequence of terminal list;;
+let comment = char '#' *> take_till (fun x->(x=='\n') || (x=='\r')) *> end_of_line
 
-let ws = skip_while (function
+let ws = choice [skip_while (function
     | '\x20' | '\x0a' | '\x0d' | '\x09' -> true
-    | _ -> false)
+    | _ -> false);
+  comment]
 
 (**Returns true if b is a prefix of a*)
 let str_prefix a b=
@@ -33,8 +35,8 @@ let dictionary = fix (fun dict->
     choice [string;symbol;r]);;
 let general_seq = many (choice [string;symbol;dictionary])>>|fun x->Sequence x;;
 let assignment=
-  let sname=symbol <* ws <* char '=' in
-  let seq=general_seq <* ws <* char ';' in
+  let sname=ws *>symbol <* ws <* char '=' in
+  let seq=general_seq <* ws <* char ';' <* ws in
   list [sname;seq]
   ;;
 let rec terminal_to_str symb=
@@ -45,7 +47,7 @@ let rec terminal_to_str symb=
   | Sequence s->String.concat "->" (List.map terminal_to_str s)
   | Dictionary l->String.concat " " ([ "{ " ]@(List.map terminal_to_str l)@["}"]);;
 
-let comment = char '#' *> take_till (fun x->x=='\n') <* char '\n';;
+let comment = char '#' *>  take_while (fun x->not (x=='\n')) <* char '\n';;
 
 let all_assignments : terminal list list t=
   many (choice [comment>>|(fun _->[]);assignment>>|fun x->x]);;

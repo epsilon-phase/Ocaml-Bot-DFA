@@ -49,3 +49,10 @@ That leaves mostly how rules interact.
 5. Rules should not be called `<#>` unless they're meant to act as comments or
    not show up in the listing of tags.
 
+In addition to the rules, the files may include comments such that work similarly to shell comments
+```
+#These are some colors :3
+<color> = { "red" | "blue" | "green" };
+#this is something else
+<something-else>= "";
+```
