@@ -98,7 +98,9 @@ let resolve_assignments (assignments: terminal list list)=
       | Symbol s->
         begin
           try Hashtbl.find tbl s
-          with Not_found -> Printf.eprintf "Could not find symbol with name %s in rule for %s\n" s symbol; raise Not_found
+          with Not_found ->
+            Printf.eprintf "Could not find symbol with name %s in rule for %s\n" s symbol;
+            raise Not_found
         end
       | x->x in
     Hashtbl.add tbl symbol (recursor (List.hd (List.tl t))) in
