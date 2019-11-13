@@ -63,5 +63,5 @@
                   | "gives you a" { "harsh" | "curious" } "look"
                   | {"says nothing and passes you a" | "hands you a "} <action-gift> };
 <action-total> = { "there are" | "you observe" } <actor-aggregate> <action-aggregate> "\." <actor-single> <action-single> "\.";
-<#> = "Voila!";
+# Voila!
 <total>="You" <arrival> { "a" | "the" } <location> "\." <action-total>;

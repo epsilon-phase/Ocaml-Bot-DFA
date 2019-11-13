@@ -5,8 +5,10 @@ allow making bots with a reasonably large network(assuming that it can be
 representated as a DAG/DFA).
 
 This requires [Dune](https://github.org/Ocaml/dune),
-[Angstrom](https://github.com/inhabitedtype/angstrom/), and most likely
-[Opam](https://opam.ocaml.org).
+[Angstrom](https://github.com/inhabitedtype/angstrom/),
+[Zarith](https://github.com/ocaml/zarith), and most likely
+[Opam](https://opam.ocaml.org), if only because it makes obtaining these
+dependencies significantly easier.
 
 Once you have those installed and opam's environment setup, you should be able to run 
 `dune build main.exe` (the .exe is present on all platforms).

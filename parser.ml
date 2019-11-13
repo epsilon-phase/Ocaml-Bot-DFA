@@ -33,6 +33,7 @@ let symbol = ws *> char '<' *> take_while (fun x->x!='>') <* char '>'>>| fun x->
 let dictionary = fix (fun dict->
     let r=ws *>char '{' *> sep_by ( ws *> char '|') (sep_by ws dict>>|fun x->Sequence x)  <* ws <* char  '}' >>|fun x->Dictionary x in
     choice [string;symbol;r]);;
+
 let general_seq = many (choice [string;symbol;dictionary])>>|fun x->Sequence x;;
 let assignment=
   let sname=ws *>symbol <* ws <* char '=' in
@@ -99,6 +100,7 @@ let resolve_assignments (assignments: terminal list list)=
                       )
                       assignments);
   tbl;;
+(**Wrapper for simplicity's sake*)
 let resolve_and_load_assignments fname=
   let s=load_file fname in
   match parse_string all_assignments s with

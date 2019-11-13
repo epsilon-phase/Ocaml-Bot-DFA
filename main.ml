@@ -18,10 +18,10 @@ let add_term (root:term) (leaf:term) =
 
 let rec count_states term =
   match term with
-  | Leaf _ -> 1
-  | End -> 1
-  | SingleOpt (a,b) -> (count_states a) * (count_states b)
-  | Dictionary (arr,next) -> (Array.fold_right (fun  y x->x+count_states y) arr 0)  * count_states next
+  | Leaf _ -> Z.one
+  | End -> Z.one
+  | SingleOpt (a,b) -> Z.mul (count_states a)  (count_states b)
+  | Dictionary (arr,next) -> Z.mul (Array.fold_right (fun  y x->Z.add x (count_states y)) arr Z.zero)  (count_states next)
 ;;
 let rec longest_chain term=
   match term with
@@ -124,7 +124,8 @@ let () =
       list_terms q;
     end else
       let terms = optimize (convert_to_term (Hashtbl.find q Sys.argv.(2))) in
-      Printf.eprintf "Total possible states %i\n" (count_states terms);
+      let states=(count_states terms) in
+      Printf.eprintf "Total possible states %s\n" (Z.to_string states);
       Printf.eprintf "Longest chain %i\n" (longest_chain terms);
       for _ = 1 to (if Array.length Sys.argv > 3 then int_of_string Sys.argv.(3) else 1) do
         let indices = rand_choice terms in
