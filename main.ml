@@ -75,6 +75,8 @@ let rec explore (t:term) (p:string list)=
   | Dictionary (arr,next)->let q= List.flatten (Array.to_list (Array.map (fun x->explore x p) arr)) in
     List.flatten (List.map (fun x->explore next x) q)
 ;;
+
+(**Create a list of integer indices that describe the traversal of the graph*)
 let rec rand_choice (t:term)=
   match t with
   | Dictionary (arr,next) ->let i = Random.int (Array.length arr) in
@@ -82,6 +84,8 @@ let rec rand_choice (t:term)=
   | End->[]
   | Leaf _->[]
   | SingleOpt (a,b)-> rand_choice a @ rand_choice b;;
+
+(**Convert a list of indices and a term into a lkst of strings*)
 let rec from_indices (t:term) (i:int list)=
   match t with
   | Dictionary (arr,next) -> let head = List.hd i in
@@ -103,6 +107,8 @@ let rec convert_to_term (t:Parser.terminal)=
       SingleOpt (convert_to_term x,y)) a End
   |Parser.Null -> End
   |_->End;;
+
+
 let list_terms (tbl:(string,Parser.terminal) Hashtbl.t) =
   Hashtbl.iter (fun x _->if not (String.equal x "#") then print_endline x) tbl
 
@@ -118,8 +124,8 @@ let () =
       list_terms q;
     end else
       let terms = optimize (convert_to_term (Hashtbl.find q Sys.argv.(2))) in
-      Printf.printf "Total possible states %i\n" (count_states terms);
-      Printf.printf "Longest chain %i\n" (longest_chain terms);
+      Printf.eprintf "Total possible states %i\n" (count_states terms);
+      Printf.eprintf "Longest chain %i\n" (longest_chain terms);
       for _ = 1 to (if Array.length Sys.argv > 3 then int_of_string Sys.argv.(3) else 1) do
         let indices = rand_choice terms in
         let (a,_)=from_indices terms indices in
