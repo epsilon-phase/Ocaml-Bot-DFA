@@ -58,3 +58,16 @@ In addition to the rules, the files may include comments such that work similarl
 #this is something else
 <something-else>= "";
 ```
+
+## Context Carrying
+
+Context carrying(for lack of a better term), is a way to carry some terms forwards
+through the rules. For example
+
+```
+<a> = (girl's-name).{ "Melissa" | "Jessica" | "Nona" } 
+      "enjoyed some" {"Vanilla"|"Chocolate"} "icecream." 
+      (girl's-name) "likes that flavor";
+```
+
+Allows the second usage of `girl's-name` to match the first without a great deal more states.

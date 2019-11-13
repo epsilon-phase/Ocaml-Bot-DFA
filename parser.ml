@@ -2,6 +2,8 @@ open Angstrom;;
 type terminal =
   | Symbol of string
   | Dictionary of terminal list
+  | LocalAssign of string *terminal
+  | LocalReference of string
   | Leaf of string
   | Null
   | Sequence of terminal list;;
@@ -30,11 +32,14 @@ let string = ws *> char '"' *> take_while (fun x->x!='"') <* char '"' >>| fun x-
   |_->Leaf (fix_string x);;
 let symbol = ws *> char '<' *> take_while (fun x->x!='>') <* char '>'>>| fun x->Symbol x;;
 
+let context= ws *>char '(' *>take_till (fun x->x==')') <* char ')' <* ws
 let dictionary = fix (fun dict->
     let r=ws *>char '{' *> sep_by ( ws *> char '|') (sep_by ws dict>>|fun x->Sequence x)  <* ws <* char  '}' >>|fun x->Dictionary x in
-    choice [string;symbol;r]);;
+    let q = lift2 (fun x y->LocalAssign (x,y)) (context <* char '.') r in
+    choice [string;symbol;r;q;context>>|fun x->LocalReference x]);;
+let context_assign=lift2 (fun x y->LocalAssign (x,y)) context (char '.' *>choice [dictionary;symbol;string])
+let general_seq = many (choice [string;symbol;dictionary;context_assign;context>>|fun x->LocalReference x])>>|fun x->Sequence x;;
 
-let general_seq = many (choice [string;symbol;dictionary])>>|fun x->Sequence x;;
 let assignment=
   let sname=ws *>symbol <* ws <* char '=' in
   let seq=general_seq <* ws <* char ';' <* ws in
@@ -44,6 +49,8 @@ let rec terminal_to_str symb=
   match symb with
   | Symbol s->Printf.sprintf "Symbol %s" s
   | Leaf s->Printf.sprintf "Leaf %s" s
+  | LocalAssign(a,b)->Printf.sprintf "Context assigned %s,%s" a (terminal_to_str b)
+  | LocalReference a->Printf.sprintf "Context reference %s" a
   | Null -> "Null"
   | Sequence s->String.concat "->" (List.map terminal_to_str s)
   | Dictionary l->String.concat " " ([ "{ " ]@(List.map terminal_to_str l)@["}"]);;

@@ -57,9 +57,9 @@
 <action-gift> = {"" | <gift-quality>}
                 {
                 <metals> {"watch"|"clock"}
-                |"clockwork"  {"animal"|"cat"|"mouse"|"bat"|"bird"}
+                |"clockwork"  (z).{"animal"|"cat"|"mouse"|"bat"|"bird"}
                   {""|"made of" <metals>}
-                  { "" |"\. It"
+                  { "" |"\." { "it" | "the" (z)}
                     {"performs simple math problems"
                     |"chirps contentedly"
                     |"scrawls illegible fortunes in the dirt"}}
