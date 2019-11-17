@@ -8,6 +8,10 @@
  (modules main)
  (libraries dfa))
 (executable
+  (name bot)
+  (modules bot)
+  (libraries dfa pyml))
+(executable
  (name my_utop)
  (libraries utop)
  (modules my_utop)

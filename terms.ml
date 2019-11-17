@@ -1,19 +1,10 @@
 type term =
-  | Dictionary of term array *term
+  | Dictionary of term array
   | SingleOpt of term * term
   | Leaf of string
   | ContextAssignment of string* term
   | ContextReference of string
   | End;;
-let list_of_atoms_to_terms (atoms: string list) =
-  Dictionary (Array.of_list
-                (List.map (fun (x:string)->Leaf x) atoms),End);;
-let add_term (root:term) (leaf:term) =
-  match root with
-  | Dictionary (arr,next) -> Dictionary (Array.append arr (Array.make 1 leaf),next)
-  | SingleOpt (a,b) -> Dictionary (Array.of_list [SingleOpt (a,b);leaf],End)
-  | End-> Dictionary (Array.of_list [End; leaf],End)
-  | x -> Dictionary (Array.of_list [x;leaf],End);;
 
 let rec count_states term =
   match term with
@@ -22,7 +13,7 @@ let rec count_states term =
   | ContextAssignment (_,n)->count_states n
   | ContextReference _-> Z.one
   | SingleOpt (a,b) -> Z.mul (count_states a)  (count_states b)
-  | Dictionary (arr,next) -> Z.mul (Array.fold_right (fun  y x->Z.add x (count_states y)) arr Z.zero)  (count_states next)
+  | Dictionary arr -> Array.fold_right (fun  y x->Z.add x (count_states y)) arr Z.zero
 ;;
 let rec longest_chain term=
   match term with
@@ -31,29 +22,17 @@ let rec longest_chain term=
   | ContextAssignment (_,n)->longest_chain n
   | ContextReference _-> 1
   | SingleOpt (a,b)-> longest_chain a + longest_chain b
-  | Dictionary (a,b)->Array.fold_right (fun x y-> max y (longest_chain x)) a 0 + longest_chain b;;
-let temple_adjectives = add_term (list_of_atoms_to_terms [
-    "wonderous"
-  ;"terrible"
-  ;"eternal"
-  ]) End;;
-let temple_nouns =list_of_atoms_to_terms [
-    "temple"
-  ;"lamissary"
-  ;"church"
-  ];;
-let temple_reputation = Dictionary ([|
-    Leaf "of doom";
-    Leaf "of happiness";
-    End
-  |],End);;
-let temple_preposition = Dictionary ([|
-    Leaf "at the mountain";
-    End;
-  |],End);;
-let temple_suffix = Dictionary([|
-    SingleOpt (temple_reputation,temple_preposition);
-  |],End);;
+  | Dictionary a->Array.fold_right (fun x y-> max y (longest_chain x)) a 0;;
+let rec connect_at_end (next:term) (t:term)=
+  match t with
+  | ContextAssignment (s,n)->ContextAssignment (s,connect_at_end next n)
+  | Leaf s->SingleOpt(Leaf s,next)
+  | SingleOpt(Leaf s,End)->SingleOpt(Leaf s,next)
+  | SingleOpt(Leaf s,x)->SingleOpt(Leaf s,connect_at_end next x)
+  | Dictionary arr->Dictionary (Array.map (connect_at_end next) arr)
+  | x->x
+
+
 let rec optimize (t:term) =
   match t with
   | End->End
@@ -61,21 +40,16 @@ let rec optimize (t:term) =
   | ContextAssignment (s,n)->ContextAssignment (s,optimize n)
   | ContextReference s->ContextReference s
   | SingleOpt (Leaf s,End)-> Leaf s
-  | SingleOpt (Dictionary (arr,End), Dictionary (arr2,x))->
-    Dictionary (Array.map optimize arr,
-                Dictionary(Array.map optimize arr2,
-                           optimize x))
-  | SingleOpt (Dictionary (arr,End),End)->
-    Dictionary (Array.map optimize arr,End)
+  | SingleOpt (Dictionary a,x)->Dictionary (Array.map (connect_at_end x) a)
   | SingleOpt (a,b) -> SingleOpt(optimize a,optimize b)
-  | Dictionary (arr,next) -> Dictionary (Array.map optimize arr,optimize next);;
+  | Dictionary (arr) -> Dictionary (Array.map optimize arr);;
 
 
 (**Create a list of integer indices that describe the traversal of the graph*)
 let rec rand_choice (t:term)=
   match t with
-  | Dictionary (arr,next) ->let i = Random.int (Array.length arr) in
-    [i] @ rand_choice (arr.(i)) @ rand_choice next
+  | Dictionary (arr) ->let i = Random.int (Array.length arr) in
+    [i] @ rand_choice (arr.(i))
   | ContextAssignment (_,n)->rand_choice n
   | ContextReference _->[]
   | End->[]
@@ -85,10 +59,9 @@ let rec rand_choice (t:term)=
 (**Convert a list of indices and a term into a lkst of strings*)
 let rec from_indices (t:term) (i:int list) (tbl:(string,string list) Hashtbl.t)=
   match t with
-  | Dictionary (arr,next) -> let head = List.hd i in
+  | Dictionary arr -> let head = List.hd i in
     let (n,p) = from_indices arr.(head) (List.tl i) tbl in
-    let (ret,r)=from_indices next p tbl in
-    n@ret,r
+    n,p
   | Leaf s -> [s],i
   | End -> [],i
   | ContextAssignment (s,n) -> let (a,b)= (from_indices n i tbl) in
@@ -102,12 +75,11 @@ let rec from_indices (t:term) (i:int list) (tbl:(string,string list) Hashtbl.t)=
   | SingleOpt (a,b) -> let (r1,rem) = from_indices a i tbl in
     let (r2,c)= from_indices b rem tbl in
     r1@r2,c
-let temple_terms =optimize  (SingleOpt (temple_adjectives, SingleOpt (temple_nouns,temple_suffix)));;
 let rec convert_to_term (t:Parser.terminal)=
   match t with
   |Parser.Leaf s->Leaf s
   |Parser.Dictionary a->Dictionary (Array.of_list
-                                      (List.map convert_to_term a),End)
+                                      (List.map convert_to_term a))
   |Parser.Sequence a->List.fold_right (fun x y->
       SingleOpt (convert_to_term x,y)) a End
   |Parser.Null -> End

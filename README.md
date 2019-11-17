@@ -71,3 +71,50 @@ through the rules. For example
 ```
 
 Allows the second usage of `girl's-name` to match the first without a great deal more states.
+
+
+# The messy machinery of Bottitude
+
+The bot executable requires an additional two dependencies on top of the others, 
+one in python(yes, yes, it's quite a mess), Mastodon.py and pyml.
+
+So, to build this run `dune build bot.exe`, and setup a passwd.txt as follows:
+
+```
+<instance url>
+<the registered email address>
+<the password>
+```
+
+As a reminder, don't use a password you like or care about for this one.
+
+In addition, these may optionally be followed by the following directives:
+
+| `interval=<integer>` | The number of minutes between posts. Only matters with count specified |
+| `count=<integer>`    | number of posts to make per run                                        |
+| `cw=<string>`        | (The content warning to affix before your bot's posts)                 |
+
+
+
+running `_build/default/bot.exe <example.bot> <total>` will setup and run it. In
+the process it will create a text file called `secrets.txt`, this one is
+important but should be regenerated on the next run if removed. Emphasis on
+*should be* but we're not feeling up to testing this at the time of writing.
+
+This is not a pleasant part of the code, so best to avoid counting on
+it to be entirely honest. Things will be fixed, and ideally, this awful
+interface with python will be dealt with in a future release.
+
+So, now that you've presumably got it spewing toots out onto the fediverse, time
+to automate it.
+
+We recommend a bash script. A batch script should look similar but it's been
+quite a while.
+
+```bash
+while true;do
+  ./_build/default/bot.exe <bot file> <desired rule>
+  sleep <interval>
+done
+```
+

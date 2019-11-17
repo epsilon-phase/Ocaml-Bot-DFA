@@ -27,11 +27,15 @@ let fix_string x=
   else
     String.concat "" [" ";x]
 
+(*String terminal combinator*)
 let string = ws *> char '"' *> take_while (fun x->x!='"') <* char '"' >>| fun x->match x with
   | ""-> Null
   |_->Leaf (fix_string x);;
+
+(*Symbol combinator*)
 let symbol = ws *> char '<' *> take_while (fun x->x!='>') <* char '>'>>| fun x->Symbol x;;
 
+(*A context capture*)
 let context= ws *>char '(' *>take_till (fun x->x==')') <* char ')' <* ws
 let dictionary = fix (fun dict->
     let r=ws *>char '{' *> sep_by ( ws *> char '|') (sep_by ws dict>>|fun x->Sequence x)  <* ws <* char  '}' >>|fun x->Dictionary x in
@@ -102,6 +106,7 @@ let resolve_assignments (assignments: terminal list list)=
             Printf.eprintf "Could not find symbol with name %s in rule for %s\n" s symbol;
             raise Not_found
         end
+      | LocalAssign (a,b)->LocalAssign(a,recursor b)
       | x->x in
     Hashtbl.add tbl symbol (recursor (List.hd (List.tl t))) in
   List.iter folder (List.filter

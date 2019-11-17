@@ -1,6 +1,10 @@
 (*open Array;;*)
 (*open Queue;;*)
 open Dfa.Terms;;
+let rec each_nth n limit= if limit-n>0 then
+    each_nth n (limit-n)@[limit-n,n]
+  else [0,limit];;
+let commatize str=String.concat "," (List.map (fun (x,y)->String.sub str x y) (each_nth 3 (String.length str)))
 let () =
   Random.self_init ();
   if Array.length Sys.argv < 2 then
@@ -20,11 +24,11 @@ You can use any of these though\n" Sys.argv.(2);
             raise Not_found
           end) in
       let states=(count_states terms) in
-      Printf.eprintf "Total possible states %s\n" (Z.to_string states);
+      Printf.eprintf "Total possible states %s\n" (commatize (Z.to_string states));
       Printf.eprintf "Longest chain %i\n" (longest_chain terms);
       for _ = 1 to (if Array.length Sys.argv > 3 then int_of_string Sys.argv.(3) else 1) do
         let indices = rand_choice terms in
         let (a,_)=from_indices terms indices (Hashtbl.create 10) in
         print_endline (String.concat "" a);
-      done
+      done;
 ;;

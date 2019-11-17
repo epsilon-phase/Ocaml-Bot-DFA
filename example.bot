@@ -25,7 +25,38 @@
 <mountain> = { <color> | ""} <mountain-noun>;
 <field> = { "plains" | "delta" | "desert" };
 <terrain> = { <mountain> | <field> };
-
+# names
+<name-suffixes> =
+                "\-"
+                "The"
+                {"Destruction"|"Motion"|"Evaporation" |"Dissolution"|"Congregation"
+                |"Attainment"}
+                "of"
+                { "Acid" {"" | "Rains"}
+                | "Armies" | "Efforts" | "Goals"
+                |"Kings"|"Queens"|"Royalty"
+                };
+<location-name> = "The"
+                 { "" | "Dreaded" | "Dreadful"
+                 | "Hateful,"| ""}
+                 { "Ghastly"
+                 | "Remembered" | "Memorable"
+                 | "Caustic" | "Wonderful"
+                 | "Horrible" | "Birdish"
+                 | "Mousey" | "Chocolate"
+                 | "Momentary"|"Compact"
+                 |"Expansive"|"Hopeful"
+                 |"Moving"|"Forgetting"
+                 }
+                 { "Archives"| "Yells"
+                 | "Horses"| "Whirls"
+                 | "Greetings"| "Barrows"
+                 | "Colors"| "Mines"
+                 | "Agreement" | "Congregation"
+                 | "Harrowing"
+                 } { "" | <name-suffixes>};
+<location-suffix> = { ""|
+                    | "\;" <location-name>};
 # Location features
 <temple> = { "temple" | "lamissary" };
 <city-adjectives> = { "" };
@@ -33,11 +64,12 @@
 <fortress>= { "fort" | "castle" | "post" | "citadel" | "mesa" };
 <location-type> = { <temple> | <city> | <fortress> };
 <preposition> = { "before" | "at" | "upon" };
-<location> = <location-type> { "" | <preposition> "the" <terrain> };
+<location> = <location-type> <location-suffix> { "" | <preposition> "the" <terrain> };
 <arrival> = { "stumble into" | "come upon" | "arrive at" | "look" { "upon" | "at" }};
 
 # actions
-<actor-aggregate> = { "monks" | "soldiers" | "politicians" };
+<actor-aggregate> = (actor-type).{ "monk" | "soldier" | "politician" | "kid"
+                  |"artisan"|"smith" } "\s";
 <action-aggregate> = { "eating" {"lunch" | "dinner" | "breakfast" }
                      | "marching"
                      | "milling around" { ""
@@ -46,7 +78,14 @@
                                                   {"a" { "festival"
                                                        | "\n" "embankment"
                                                        | "camp" } }}}};
-<actor-single> = "one";
+<actor-distinction>={""
+                    | {"very"|""} "tall"
+                    | {"slightly"|""} "short"
+                    | "gangly"
+                    | "thick-waisted"
+                    | "long-haired"
+                    | "bald"};
+<actor-single> = {"One"| "A" <actor-distinction> (actor-type)};
 <gift-quality> = { "fine" | "crude" | "average" | "unusual" };
 <metals> = { "brass" | "steel" 
              |"iron" |"rusted"
@@ -62,12 +101,16 @@
                   { "" |"\." { "it" | "the" (z)}
                     {"performs simple math problems"
                     |"chirps contentedly"
-                    |"scrawls illegible fortunes in the dirt"}}
+                    |"scrawls illegible fortunes in the dirt"
+                    |"lets out a belch of flame before dismantling itself"}}
                 };
+<action-gift-prefix> = {"says nothing and passes you a" | "hands you a"
+                       |"laughs and hands you" |"tosses you a"};
 <action-single>={ "waves at you as you" { "approach" | "pass" }
                   | "offers you a meal"
                   | "gives you a" { "harsh" | "curious" } "look"
-                  | {"says nothing and passes you a" | "hands you a "} <action-gift> };
+                  | <action-gift-prefix>
+                    <action-gift> };
 <action-total> = { "there are" | "you observe" } <actor-aggregate> <action-aggregate> "\." <actor-single> <action-single> "\.";
 # Voila!
 <total>="You" <arrival> { "a" | "the" } <location> "\." <action-total>;
