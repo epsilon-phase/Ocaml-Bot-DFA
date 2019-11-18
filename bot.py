@@ -41,7 +41,7 @@ def post_loop(function):
     from datetime import datetime,timedelta
     q=timedelta(minutes=interval)
     d=datetime.now()
-    for i in range(count):
+    for i in range(post_count):
         print(d+q*i)
         client.status_post(function(),
                            visibility='unlisted',

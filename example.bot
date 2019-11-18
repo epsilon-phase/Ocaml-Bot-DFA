@@ -105,7 +105,7 @@
                     |"lets out a belch of flame before dismantling itself"}}
                 };
 <action-gift-prefix> = {"says nothing and passes you a" | "hands you a"
-                       |"laughs and hands you" |"tosses you a"};
+                       |"laughs and hands you a" |"tosses you a"};
 <action-single>={ "waves at you as you" { "approach" | "pass" }
                   | "offers you a meal"
                   | "gives you a" { "harsh" | "curious" } "look"

@@ -1,18 +1,25 @@
 (library
-  (name dfa)
-  (libraries angstrom zarith)
-  (modules terms parser)
-  )
+ (name dfa)
+ (libraries angstrom)
+ (modules terms parser))
+
 (executable
  (name main)
  (modules main)
- (libraries dfa))
+ (libraries dfa zarith))
+
 (executable
-  (name bot)
-  (modules bot)
-  (libraries dfa pyml))
+ (name bot)
+ (modules bot)
+ (libraries dfa pyml))
+
 (executable
  (name my_utop)
  (libraries utop)
  (modules my_utop)
  (link_flags -linkall))
+
+(executable
+ (name bounds)
+ (libraries dfa)
+ (modules bounds))
