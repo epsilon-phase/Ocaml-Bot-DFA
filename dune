@@ -19,7 +19,3 @@
  (modules my_utop)
  (link_flags -linkall))
 
-(executable
- (name bounds)
- (libraries dfa)
- (modules bounds))
