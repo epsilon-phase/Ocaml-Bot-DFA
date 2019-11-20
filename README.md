@@ -88,8 +88,10 @@ So, to build this run `dune build bot.exe`, and setup a passwd.txt as follows:
 
 As a reminder, don't use a password you like or care about for this one.
 
-In addition, these may optionally be followed by the following directives:
+In addition, these may optionally be followed by these directives:
 
+| Option               | Description                                                            |
+|--------              | -----                                                                  |
 | `interval=<integer>` | The number of minutes between posts. Only matters with count specified |
 | `count=<integer>`    | number of posts to make per run                                        |
 | `cw=<string>`        | (The content warning to affix before your bot's posts)                 |
