@@ -6,8 +6,8 @@ let rec count_states term =
   match term with
   | Leaf _ -> Z.one
   | End -> Z.one
-  | ContextAssignmentStart _ ->Z.one
-  | ContextAssignmentEnd _->Z.one
+  | ContextAssignmentStart _ -> Z.one
+  | ContextAssignmentEnd _ -> Z.one
   | ContextReference _ -> Z.one
   | SingleOpt (a, b) -> Z.mul (count_states a) (count_states b)
   | Dictionary arr ->
@@ -57,6 +57,6 @@ let () =
            else 1
       do
         let indices = rand_choice terms in
-        let a, _,_ = from_indices terms indices (Hashtbl.create 10) [] in
+        let a, _, _ = from_indices terms indices (Hashtbl.create 10) [] in
         print_endline (String.concat "" a)
       done

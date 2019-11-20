@@ -22,7 +22,7 @@ let () =
       Py.String.of_string
         (String.concat ""
            (let indices = Dfa.Terms.rand_choice terms in
-            let a, _,_ =
+            let a, _, _ =
               Dfa.Terms.from_indices terms indices (Hashtbl.create 10) []
             in
             a))) ;

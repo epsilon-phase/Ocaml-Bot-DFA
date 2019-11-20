@@ -12,7 +12,7 @@ let rec longest_chain term =
   | Leaf _ -> 1
   | End -> 0
   | ContextAssignmentStart _ -> 0
-  | ContextAssignmentEnd _ ->0
+  | ContextAssignmentEnd _ -> 0
   | ContextReference _ -> 1
   | SingleOpt (a, b) -> longest_chain a + longest_chain b
   | Dictionary a -> Array.fold_right (fun x y -> max y (longest_chain x)) a 0
@@ -20,7 +20,7 @@ let rec longest_chain term =
 let rec connect_at_end (next : term) (t : term) =
   match t with
   | ContextAssignmentStart s -> ContextAssignmentStart s
-  | ContextAssignmentEnd s->ContextAssignmentEnd s
+  | ContextAssignmentEnd s -> ContextAssignmentEnd s
   | Leaf s -> SingleOpt (Leaf s, next)
   | SingleOpt (Leaf s, End) -> SingleOpt (Leaf s, next)
   | SingleOpt (Leaf s, x) -> SingleOpt (Leaf s, connect_at_end next x)
@@ -32,7 +32,7 @@ let rec optimize (t : term) =
   | End -> End
   | Leaf s -> Leaf s
   | ContextAssignmentStart s -> ContextAssignmentStart s
-  | ContextAssignmentEnd s->ContextAssignmentEnd s
+  | ContextAssignmentEnd s -> ContextAssignmentEnd s
   | ContextReference s -> ContextReference s
   | SingleOpt (Leaf s, End) -> Leaf s
   | SingleOpt (Dictionary a, x) ->
@@ -58,7 +58,7 @@ let rec choice_bounds (t : term) =
         | x -> (
             [x] @ match choice_bounds b with SeqChoice a -> a | x -> [x] ) )
   | ContextAssignmentStart _ -> NoChoice
-  |ContextAssignmentEnd _ ->NoChoice
+  | ContextAssignmentEnd _ -> NoChoice
   | _ -> NoChoice
 
 let rec print_bounds ?(depth = 0) (b : bounds) =
@@ -83,7 +83,7 @@ let rec rand_choice (t : term) =
       let i = Random.int (Array.length arr) in
       [i] @ rand_choice arr.(i)
   | ContextAssignmentStart _ -> []
-  |ContextAssignmentEnd _->[]
+  | ContextAssignmentEnd _ -> []
   | ContextReference _ -> []
   | End -> []
   | Leaf _ -> []
@@ -91,29 +91,34 @@ let rec rand_choice (t : term) =
 
 (**Convert a list of indices and a term into a list of strings*)
 let rec from_indices (t : term) (i : int list)
-    (tbl : (string, string list) Hashtbl.t) (open_contexts:string list) =
-  let accumulate key s=match Hashtbl.find_opt tbl key with
-    |Some x->Hashtbl.replace tbl key (x@[s])
-    |None->Hashtbl.replace tbl key [s] in
+    (tbl : (string, string list) Hashtbl.t) (open_contexts : string list) =
+  let accumulate s key =
+    match Hashtbl.find_opt tbl key with
+    | Some x -> Hashtbl.replace tbl key (x @ [s])
+    | None -> Hashtbl.replace tbl key [s]
+  in
   match t with
   | Dictionary arr ->
       let head = List.hd i in
       let n, p, oc = from_indices arr.(head) (List.tl i) tbl open_contexts in
-      (n, p,oc)
-  | Leaf s -> List.iter (fun x->accumulate x s) open_contexts; ([s], i,open_contexts)
-  | End -> ([], i,open_contexts)
+      (n, p, oc)
+  | Leaf s ->
+      List.iter (accumulate s) open_contexts ;
+      ([s], i, open_contexts)
+  | End -> ([], i, open_contexts)
   | ContextAssignmentStart s ->
-    ([],i,[s]@open_contexts)
-  | ContextAssignmentEnd s-> ([],i,List.filter ((!=)s) open_contexts)
+      Hashtbl.remove tbl s ;
+      ([], i, [s] @ open_contexts)
+  | ContextAssignmentEnd s -> ([], i, List.filter (( != ) s) open_contexts)
   | ContextReference s -> (
-    try (Hashtbl.find tbl s, i,open_contexts)
+    try (Hashtbl.find tbl s, i, open_contexts)
     with Not_found ->
       Printf.eprintf "Could not find variable bound to %s\n" s ;
       raise Not_found )
   | SingleOpt (a, b) ->
-      let r1, rest,oc1 = from_indices a i tbl open_contexts in
-      let r2, c,oc2 = from_indices b rest tbl oc1 in
-      (r1 @ r2, c,oc2)
+      let r1, rest, oc1 = from_indices a i tbl open_contexts in
+      let r2, c, oc2 = from_indices b rest tbl oc1 in
+      (r1 @ r2, c, oc2)
 
 let rec convert_to_term (t : Parser.terminal) =
   match t with
@@ -123,7 +128,10 @@ let rec convert_to_term (t : Parser.terminal) =
   | Parser.Sequence a ->
       List.fold_right (fun x y -> SingleOpt (convert_to_term x, y)) a End
   | Parser.Null -> End
-  | Parser.LocalAssign (a, b) -> SingleOpt (ContextAssignmentStart a,(SingleOpt (convert_to_term b,ContextAssignmentEnd a)))
+  | Parser.LocalAssign (a, b) ->
+      SingleOpt
+        ( ContextAssignmentStart a
+        , SingleOpt (convert_to_term b, ContextAssignmentEnd a) )
   | Parser.LocalReference a -> ContextReference a
   | _ -> End
 
