@@ -93,8 +93,8 @@ let rec rand_choice (t : term) =
 let rec from_indices (t : term) (i : int list)
     (tbl : (string, string list) Hashtbl.t) (open_contexts:string list) =
   let accumulate key s=match Hashtbl.find_opt tbl key with
-    |Some x->Hashtbl.add tbl key (x@[s])
-    |None->Hashtbl.add tbl key [s] in
+    |Some x->Hashtbl.replace tbl key (x@[s])
+    |None->Hashtbl.replace tbl key [s] in
   match t with
   | Dictionary arr ->
       let head = List.hd i in

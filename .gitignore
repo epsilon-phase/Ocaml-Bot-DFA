@@ -1,0 +1,9 @@
+.#*
+_build/*
+__pycache__/*
+
+#specific for this project
+
+passwd.txt
+secret.txt
+usercred.txt
