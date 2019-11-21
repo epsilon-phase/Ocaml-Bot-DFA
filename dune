@@ -12,3 +12,8 @@
  (name bot)
  (modules bot)
  (libraries dfa pyml))
+
+(executable
+ (name graph)
+ (modules graph)
+ (libraries dfa))
