@@ -9,6 +9,16 @@ type graph_terminal =
   | LocalAssign of string * graph_terminal * int
   | LocalReference of string * int
 
+let id_of (t : graph_terminal) =
+  match t with
+  | Symbol (_, i) -> i
+  | Dictionary (_, i) -> i
+  | Leaf (_, i) -> i
+  | Sequence (_, i) -> i
+  | Null i -> i
+  | LocalAssign (_, _, i) -> i
+  | LocalReference (_, i) -> i
+
 let new_counter =
   let i = ref 0 in
   let next () =
@@ -40,13 +50,12 @@ let rec write_node output ?(indent = 2) (t : graph_terminal) =
   | Leaf (s, i) -> output_string @@ make_node s i
   | Null i -> output_string @@ make_node "∅" i ~shape:"doublecircle"
   | Dictionary (l, i) ->
-      output_string @@ make_node "⤶ ⤷" i ~shape:"triangle" ;
       output_string "" ;
       Printf.fprintf output
-        "subgraph %i {\nlabel=\"hello\";\nstyle=filled;\ncolor=lightgrey;\n"
-        i ;
+        "subgraph cluster%i {\nstyle=\"dashed,rounded\";\n{" i ;
+      output_string @@ make_node "⤶ ⤷" i ~shape:"point" ;
       List.iter (write_node output ~indent:(indent + 2)) l ;
-      Printf.fprintf output "}\n"
+      Printf.fprintf output "}}\n"
   | Sequence (l, _) -> List.iter (write_node output ~indent) l
   | LocalAssign (s, n, i) ->
       output_string
@@ -67,16 +76,6 @@ let rec obtain_ids (tbl : (terminal, int) Hashtbl.t) (t : terminal)
     | Dictionary l -> List.fold_right (obtain_ids tbl) l id
     | _ -> id )
   else Hashtbl.find tbl t
-
-let id_of (t : graph_terminal) =
-  match t with
-  | Symbol (_, i) -> i
-  | Dictionary (_, i) -> i
-  | Leaf (_, i) -> i
-  | Sequence (_, i) -> i
-  | Null i -> i
-  | LocalAssign (_, _, i) -> i
-  | LocalReference (_, i) -> i
 
 let rec obtain_edges (edges : (int, int) Hashtbl.t)
     (previous : int list option) (t : graph_terminal) : int list option =
