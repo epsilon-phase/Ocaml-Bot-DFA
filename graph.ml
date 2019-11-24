@@ -28,21 +28,33 @@ let rec convert_to_graph (counter : unit -> int) (t : terminal) =
   | Null -> Null i
   | Sequence l -> Sequence (List.map (convert_to_graph counter) l, i)
 
-let make_node label id = Printf.sprintf "%i [label=\"%s\"];\n" id label
+let make_node ?(shape = "ellipse") label id =
+  Printf.sprintf "%i [label=\"%s\";shape=%s];\n" id label shape
 
-let rec write_node output ?shape:(shape="ellipse") (t : graph_terminal) =
+let rec write_node output ?(indent = 2) (t : graph_terminal) =
+  let output_string x =
+    output_string output (String.init indent (fun _ -> ' ')) ;
+    output_string output x
+  in
   match t with
-  | Leaf (s, i) -> output_string output @@ make_node s i
-  | Null i -> output_string output @@ make_node "∅" i
+  | Leaf (s, i) -> output_string @@ make_node s i
+  | Null i -> output_string @@ make_node "∅" i ~shape:"doublecircle"
   | Dictionary (l, i) ->
-      output_string output @@ make_node "Dict{" i ;
-      List.iter (write_node output) l
-  | Sequence (l, _) -> List.iter (write_node output) l
+      output_string @@ make_node "⤶ ⤷" i ~shape:"triangle" ;
+      output_string "" ;
+      Printf.fprintf output
+        "subgraph %i {\nlabel=\"hello\";\nstyle=filled;\ncolor=lightgrey;\n"
+        i ;
+      List.iter (write_node output ~indent:(indent + 2)) l ;
+      Printf.fprintf output "}\n"
+  | Sequence (l, _) -> List.iter (write_node output ~indent) l
   | LocalAssign (s, n, i) ->
-      output_string output @@ make_node (String.concat "" [s; "<-"]) i ;
+      output_string
+      @@ make_node (String.concat "" ["→"; s; "←"]) i ~shape:"Mcircle" ;
       write_node output n
   | LocalReference (s, i) ->
-      output_string output @@ make_node (String.concat "" [s; "->"]) i
+      output_string
+      @@ make_node (String.concat "" ["←"; s; "→"]) i ~shape:"Mdiamond"
   | _ -> ()
 
 let rec obtain_ids (tbl : (terminal, int) Hashtbl.t) (t : terminal)
@@ -76,10 +88,10 @@ let rec obtain_edges (edges : (int, int) Hashtbl.t)
   | None -> () ) ;
   match t with
   | Sequence (l, _) ->
-      List.fold_right
-        (fun x y -> obtain_edges edges y x)
-        l
+      List.fold_left
+        (fun x y -> obtain_edges edges x y)
         (match previous with Some x -> Some x | None -> Some [this_id])
+        l
   | Dictionary (l, _) ->
       let associations = List.map (obtain_edges edges (Some [this_id])) l in
       Some
@@ -92,7 +104,8 @@ let rec obtain_edges (edges : (int, int) Hashtbl.t)
 
 let generate_graph bot_file rule output_file =
   let output_file =
-      if output_file="-" then stdout else open_out output_file in
+    if output_file = "-" then stdout else open_out output_file
+  in
   let c = Hashtbl.find (resolve_and_load_assignments bot_file) rule in
   let c = convert_to_graph new_counter c in
   let edges = Hashtbl.create 10 in
@@ -101,15 +114,15 @@ let generate_graph bot_file rule output_file =
   (*output_string file "-1 [label=\"start\"];";*)
   write_node output_file c ;
   Hashtbl.iter
-    (fun x y -> output_string output_file (Printf.sprintf "%i->%i;\n" y x))
+    (fun x y -> output_string output_file (Printf.sprintf "%i->%i;\n" x y))
     edges ;
   output_string output_file "}" ;
   close_out output_file
 
-open Cmdliner;;
+open Cmdliner
 
 let bot_file =
-  let doc="The bot definition to read in." in
+  let doc = "The bot definition to read in." in
   Arg.(value & pos 0 string "example.bot" & info [] ~docv:"bot_file" ~doc)
 
 let rule =
@@ -117,16 +130,18 @@ let rule =
   Arg.(value & pos 1 string "total" & info [] ~docv:"rule" ~doc)
 
 let output_file =
-  let doc="The output file" in
-  Arg.(value & pos 2 string "graph.dot" &info [] ~docv:"output_file" ~doc)
-let generate_graph_t = Term.(const generate_graph $ bot_file $ rule $ output_file)
+  let doc = "The output file" in
+  Arg.(value & pos 2 string "graph.dot" & info [] ~docv:"output_file" ~doc)
+
+let generate_graph_t =
+  Term.(const generate_graph $ bot_file $ rule $ output_file)
 
 let info =
   let doc = "Generate a graphviz representation of a bot graph." in
-  let man =[
-    `S Manpage.s_bugs;
-    `P "Email bug reports to violet.white.dammit@protonmail.com"
-  ] in
+  let man =
+    [ `S Manpage.s_bugs
+    ; `P "Email bug reports to violet.white.dammit@protonmail.com" ]
+  in
   Term.info "graph" ~version:"Lol" ~doc ~exits:Term.default_exits ~man
 
-let ()=Term.exit @@ Term.eval (generate_graph_t,info)
+let () = Term.exit @@ Term.eval (generate_graph_t, info)
