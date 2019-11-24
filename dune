@@ -16,4 +16,4 @@
 (executable
  (name graph)
  (modules graph)
- (libraries dfa str))
+ (libraries dfa str cmdliner))

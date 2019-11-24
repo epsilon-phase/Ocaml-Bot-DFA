@@ -30,7 +30,7 @@ let rec convert_to_graph (counter : unit -> int) (t : terminal) =
 
 let make_node label id = Printf.sprintf "%i [label=\"%s\"];\n" id label
 
-let rec write_node output (t : graph_terminal) =
+let rec write_node output ?shape:(shape="ellipse") (t : graph_terminal) =
   match t with
   | Leaf (s, i) -> output_string output @@ make_node s i
   | Null i -> output_string output @@ make_node "∅" i
@@ -90,21 +90,43 @@ let rec obtain_edges (edges : (int, int) Hashtbl.t)
   | LocalAssign (_, n, _) -> obtain_edges edges (Some [this_id]) n
   | x -> Some [id_of x]
 
-let () =
-  let bot_file =
-    if Array.length Sys.argv > 1 then Sys.argv.(1) else "example.bot"
-  in
-  let rule = if Array.length Sys.argv > 2 then Sys.argv.(2) else "total" in
+let generate_graph bot_file rule output_file =
+  let output_file =
+      if output_file="-" then stdout else open_out output_file in
   let c = Hashtbl.find (resolve_and_load_assignments bot_file) rule in
   let c = convert_to_graph new_counter c in
   let edges = Hashtbl.create 10 in
   ignore (obtain_edges edges None c) ;
-  let file = open_out "graph.dot" in
-  output_string file "Digraph g{\n" ;
+  output_string output_file "Digraph g{\n" ;
   (*output_string file "-1 [label=\"start\"];";*)
-  write_node file c ;
+  write_node output_file c ;
   Hashtbl.iter
-    (fun x y -> output_string file (Printf.sprintf "%i->%i;\n" y x))
+    (fun x y -> output_string output_file (Printf.sprintf "%i->%i;\n" y x))
     edges ;
-  output_string file "}" ;
-  close_out file
+  output_string output_file "}" ;
+  close_out output_file
+
+open Cmdliner;;
+
+let bot_file =
+  let doc="The bot definition to read in." in
+  Arg.(value & pos 0 string "example.bot" & info [] ~docv:"bot_file" ~doc)
+
+let rule =
+  let doc = "The rule to use" in
+  Arg.(value & pos 1 string "total" & info [] ~docv:"rule" ~doc)
+
+let output_file =
+  let doc="The output file" in
+  Arg.(value & pos 2 string "graph.dot" &info [] ~docv:"output_file" ~doc)
+let generate_graph_t = Term.(const generate_graph $ bot_file $ rule $ output_file)
+
+let info =
+  let doc = "Generate a graphviz representation of a bot graph." in
+  let man =[
+    `S Manpage.s_bugs;
+    `P "Email bug reports to violet.white.dammit@protonmail.com"
+  ] in
+  Term.info "graph" ~version:"Lol" ~doc ~exits:Term.default_exits ~man
+
+let ()=Term.exit @@ Term.eval (generate_graph_t,info)
