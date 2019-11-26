@@ -1,5 +1,7 @@
 open Dfa.Parser
 
+type edge = Directed | Undirected
+
 type graph_terminal =
   | Symbol of string * int
   | Dictionary of graph_terminal list * int
@@ -77,13 +79,19 @@ let rec obtain_ids (tbl : (terminal, int) Hashtbl.t) (t : terminal)
     | _ -> id )
   else Hashtbl.find tbl t
 
-let rec obtain_edges (edges : (int, int) Hashtbl.t)
+let rec obtain_edges (edges : (int, int * edge) Hashtbl.t)
     (previous : int list option) (t : graph_terminal) : int list option =
   let this_id = id_of t in
   let add_id = match t with Sequence _ -> false | _ -> true in
   ( match previous with
   | Some x ->
-      if add_id then List.iter (fun i -> Hashtbl.add edges i this_id) x
+      if add_id then
+        List.iter
+          (fun i ->
+            Hashtbl.add edges i
+              ( this_id
+              , match t with Dictionary _ -> Undirected | _ -> Directed ))
+          x
   | None -> () ) ;
   match t with
   | Sequence (l, _) ->
@@ -113,7 +121,10 @@ let generate_graph bot_file rule output_file =
   (*output_string file "-1 [label=\"start\"];";*)
   write_node output_file c ;
   Hashtbl.iter
-    (fun x y -> output_string output_file (Printf.sprintf "%i->%i;\n" x y))
+    (fun x (y, t) ->
+      output_string output_file
+        (Printf.sprintf "%i->%i%s;\n" x y
+           (match t with Directed -> "" | Undirected -> "[dir=none]")))
     edges ;
   output_string output_file "}" ;
   close_out output_file
